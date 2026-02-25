@@ -29,4 +29,29 @@ struct APIService {
             print("Erreur réseau ou base de données : \(error.localizedDescription)")
         }
     }
+    
+    static func fetchById(id: Int) async -> ArtWork? {
+        let urlString = "https://collectionapi.metmuseum.org/public/collection/v1/objects/\(id)"
+        
+        guard let url = URL(string: urlString) else {
+            print("URL invalide")
+            return nil
+        }
+        
+        do {
+            let (data, response) = try await URLSession.shared.data(from: url)
+            
+            guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+                print("Erreur : Œuvre introuvable (ID: \(id))")
+                return nil
+            }
+            
+            let artwork = try JSONDecoder().decode(ArtWork.self, from: data)
+            return artwork
+            
+        } catch {
+            print("Erreur de décodage ou réseau : \(error)")
+            return nil
+        }
+    }
 }
