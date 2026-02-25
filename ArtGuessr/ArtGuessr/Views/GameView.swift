@@ -7,7 +7,7 @@ struct GameView: View {
             Group {
              
             }
-            .navigationTitle("Favoris")
+            .navigationTitle("Game")
         }
     }
 }
