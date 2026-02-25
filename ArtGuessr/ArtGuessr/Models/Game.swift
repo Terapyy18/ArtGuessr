@@ -1,7 +1,5 @@
-struct Game: Identifiable, Decodable, Sendable {
-    let id: Int
-}
-
+import Foundation
+import SwiftData
 class Game : GameInterface {
     
     static let nbRounds : Int = 10
@@ -17,8 +15,6 @@ class Game : GameInterface {
     init(){}
     
     func startGame() async {
-        // TODO : Récupérer tous les ids stockés dans SwiftData
-        // Mettre les indexes et score à 0
         
         // APIService.fetchAndStore50ID()
         
@@ -56,7 +52,6 @@ class Game : GameInterface {
     
     
     func gameCycle(){
-        // TODO : gérer le lancement de chaque fonction au bon moment et gérer le nombre de rounds
     }
     
     struct UserChoice {
