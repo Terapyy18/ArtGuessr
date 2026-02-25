@@ -1,7 +1,4 @@
-//
-//  GameView.swift
-//  ArtGuessr
-//
-//  Created by Etudiants on 25/02/2026.
-//
+struct Game: Identifiable, Decodable, Sendable {
+    let id: Int
+}
 

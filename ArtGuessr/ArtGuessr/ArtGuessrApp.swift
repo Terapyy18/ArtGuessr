@@ -1,17 +1,16 @@
-//
-//  ArtGuessrApp.swift
-//  ArtGuessr
-//
-//  Created by Etudiants on 25/02/2026.
-//
-
 import SwiftUI
+import SwiftData
 
 @main
 struct ArtGuessrApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            MainTabView()
         }
+        .modelContainer(for: ArtworkIds.self)
     }
+}
+
+#Preview{
+    MainTabView()
 }
