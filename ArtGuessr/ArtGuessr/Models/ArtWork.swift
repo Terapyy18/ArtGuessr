@@ -21,15 +21,11 @@ struct ArtWork: Identifiable, Decodable, Sendable {
         // 1. ID (Obligatoire)
         self.id = try container.decode(Int.self, forKey: .id)
         
-        // 2. Image avec Fallback (Sécurisé)
-        let imageString = try container.decodeIfPresent(String.self, forKey: .image) ?? ""
+        let imageString = try container.decode(String.self, forKey: .image)
         self.image = URL(string: imageString) ?? URL(string: "https://via.placeholder.com/150")!
         
-        // 3. Texte avec Fallback (Sécurisé)
-        self.name = try container.decodeIfPresent(String.self, forKey: .name) ?? "Titre inconnu"
-        self.artist = try container.decodeIfPresent(String.self, forKey: .artist) ?? "Artiste inconnu"
-        
-        // 4. Année (Décodage en Int)
-        self.year = try container.decodeIfPresent(Int.self, forKey: .year) ?? 0
+        self.name = try container.decode(String.self, forKey: .name)
+        self.year = try container.decode(Date.self, forKey: .year)
+        self.artist = try container.decode(String.self, forKey: .artist)
     }
 }

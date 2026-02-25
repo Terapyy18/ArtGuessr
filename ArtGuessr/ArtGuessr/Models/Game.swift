@@ -1,11 +1,6 @@
 import Foundation
 import SwiftData
-
-struct GameRecord: Identifiable, Decodable, Sendable {
-    let id: Int
-}
-
-class Game: GameInterface {
+class Game : GameInterface {
     
     static let nbRounds: Int = 10
     
@@ -28,10 +23,6 @@ class Game: GameInterface {
     }
     
     func startGame() async {
-        // 1. Réinitialisation de l'état du jeu
-        self.currentScore = 0
-        self.currentRound = 0
-        self.isGameOver = false
         
         // 2. Nettoyage des anciens IDs dans SwiftData pour éviter les doublons
         do {
@@ -102,24 +93,7 @@ class Game: GameInterface {
         }
     }
     
-    func checkAnswers(title: String, artist: String, year: Int) -> Int {
-        var pointsGagnes: Int = 0
-        
-        if let artwork = currentArtwork {
-            if title == artwork.name { pointsGagnes += 1 }
-            if artist == artwork.artist { pointsGagnes += 1 }
-            if year == artwork.year { pointsGagnes += 1 }
-        }
-        
-        // Mise à jour du score global
-        self.currentScore += pointsGagnes
-        
-        // Si c'était le dernier tour, on termine la partie
-        if currentRound >= Game.nbRounds {
-            self.isGameOver = true
-        }
-        
-        return pointsGagnes
+    func gameCycle(){
     }
     
     func gameCycle() {}

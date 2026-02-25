@@ -11,7 +11,12 @@ struct MainTabView: View {
             
             ScoreboardView()
                 .tabItem {
-                    Label("Scoreboard", systemImage: "info.circle")
+                    Label("House", systemImage: "house")
+
+                }
+            HomeView()
+                .tabItem {
+                    Label("Home", systemImage: "info.circle")
                 }
         }
         .accentColor(.indigo)
