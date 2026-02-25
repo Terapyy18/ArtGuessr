@@ -4,7 +4,7 @@ struct ArtWork: Identifiable, Codable {
     let id: Int
     let image: URL
     let name: String
-    let year: Int
+    let year: Date
     let artist: String
     
     enum CodingKeys: String, CodingKey {
