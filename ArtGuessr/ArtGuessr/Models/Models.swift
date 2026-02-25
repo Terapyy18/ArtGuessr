@@ -1,6 +1,11 @@
+import Foundation
 import SwiftData
 
-@Model class ArtworkIds{
+struct ObjectIDsResponse: Codable {
+    let objectIDs: [Int]
+}
+
+@Model class ArtworkIds {
     @Attribute(.unique) var id : Int
     
     init(id : Int){

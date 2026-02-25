@@ -1,4 +1,6 @@
-import Foundation
+struct Game: Identifiable, Decodable, Sendable {
+    let id: Int
+}
 
 class Game : GameInterface {
     
