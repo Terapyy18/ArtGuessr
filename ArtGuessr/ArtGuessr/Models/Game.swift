@@ -1,5 +1,8 @@
 import Foundation
 import SwiftData
+import Observation
+
+@Observable
 class Game : GameInterface {
     func checkAnswers(title: String, artist: String, year: Int) -> Int {
         return 0
@@ -46,6 +49,7 @@ class Game : GameInterface {
     }
     
     func loadNextRound() async throws {
+        print("LoadNextRound")
         // Vérifie si on a atteint la fin du quiz
         if currentRound >= Game.nbRounds {
             self.isGameOver = true
@@ -71,9 +75,12 @@ class Game : GameInterface {
         
         // Validation et mise à jour de l'état
         if fetchedArtworks.count >= 3 {
+
             self.currentRound += 1
-            self.currentArtwork = fetchedArtworks[0] // La première est la bonne réponse
-            self.currentOptions = fetchedArtworks.shuffled() // Mélange pour l'affichage
+            self.currentArtwork = fetchedArtworks[0]
+            self.currentOptions = fetchedArtworks.shuffled()
+            
+            print(self.currentArtwork)
         } else {
             // En cas d'échec réseau sur une œuvre, on tente de charger le tour suivant
             try await loadNextRound()
@@ -96,8 +103,6 @@ class Game : GameInterface {
     func gameCycle(){
     }
     
-//    func gameCycle() {}
-//    
     struct UserChoice {
         var name: String
         var artist: String
