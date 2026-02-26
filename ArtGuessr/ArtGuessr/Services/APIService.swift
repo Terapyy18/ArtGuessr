@@ -17,7 +17,7 @@ struct APIService {
             let (data, _) = try await URLSession.shared.data(from: url)
             let response = try JSONDecoder().decode(ObjectIDsResponse.self, from: data)
             
-            let top50 = Array(response.objectIDs.shuffled().prefix(50))
+            let top50 = Array(response.objectIDs.shuffled().prefix(200))
             
             for id in top50 {
                 context.insert(ArtworkIds(id: id))
