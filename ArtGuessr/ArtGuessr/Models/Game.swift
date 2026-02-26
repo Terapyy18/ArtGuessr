@@ -20,12 +20,33 @@ class Game : GameInterface {
     
     private var sessionIds: [Int] = []
     
-    var userChoice: UserChoice? = nil
+    var userChoice: userChoice? = nil
     
     var context: ModelContext
         
     init(context: ModelContext) {
         self.context = context
+    }
+    
+    func getAwnsers(userAwnser : userChoice){
+        print("Bien appelée !")
+        if let artwork : ArtWork = currentArtwork {
+            var nameAwnser = userAwnser.name
+            var artistAwnser = userAwnser.artist
+            var yearAwnsser = userAwnser.year
+            
+            if nameAwnser == artwork.name {
+                currentScore += 1
+            }
+            
+            if artistAwnser == artwork.artist {
+                currentScore += 1
+            }
+            
+            if yearAwnsser == artwork.year {
+                currentScore += 1
+            }
+        }
     }
     
     func startGame() async {
@@ -102,10 +123,5 @@ class Game : GameInterface {
     
     func gameCycle(){
     }
-    
-    struct UserChoice {
-        var name: String
-        var artist: String
-        var year: Int
-    }
+
 }

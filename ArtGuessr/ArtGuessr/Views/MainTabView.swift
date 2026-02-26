@@ -4,19 +4,19 @@ struct MainTabView: View {
 
     var body: some View {
         TabView {
+            HomeView()
+                .tabItem {
+                    Label("Accueil", systemImage: "house.fill")
+                }
+            
             GameView()
                 .tabItem {
-                    Label("Game", systemImage: "books.vertical.fill")
+                    Label("Jouer", systemImage: "paintpalette.fill")
                 }
             
             ScoreboardView()
                 .tabItem {
-                    Label("Home", systemImage: "house")
-
-                }
-            HomeView()
-                .tabItem {
-                    Label("Scoreboard", systemImage: "info.circle")
+                    Label("Scores", systemImage: "list.number")
                 }
         }
         .accentColor(.indigo)

@@ -38,7 +38,8 @@ struct GameView: View {
                     VStack(spacing: 15) {
                         ForEach(game.currentOptions, id: \.id) { artwork in
                             Button(action: {
-                                // Logique de réponse
+                                let awnsers : userChoice = userChoice(name: artwork.name, artist: artwork.artist, year: artwork.year)
+                                gameInstance?.getAwnsers(userAwnser: awnsers)
                             }) {
                                 Text(artwork.artist)
                                     .frame(maxWidth: .infinity)
