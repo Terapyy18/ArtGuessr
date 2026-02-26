@@ -34,7 +34,6 @@ struct GameView: View {
                 VStack(spacing: 15) {
                     ForEach(mockArtists, id: \.self) { artist in
                         Button(action: {
-                            // C'est ici que tu appelleras la fonction de validation de ton ViewModel
                             print("Joueur a cliqué sur : \(artist)")
                         }) {
                             Text(artist)

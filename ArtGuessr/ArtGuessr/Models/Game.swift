@@ -1,6 +1,10 @@
 import Foundation
 import SwiftData
 class Game : GameInterface {
+    func checkAnswers(title: String, artist: String, year: Int) -> Int {
+        return 0
+    }
+    
     
     static let nbRounds: Int = 10
     
@@ -11,7 +15,6 @@ class Game : GameInterface {
     var currentArtwork: ArtWork? = nil
     var currentOptions: [ArtWork] = []
     
-    // Liste des IDs disponibles pour la partie en cours afin d'éviter les répétitions
     private var sessionIds: [Int] = []
     
     var userChoice: UserChoice? = nil
@@ -23,16 +26,13 @@ class Game : GameInterface {
     }
     
     func startGame() async {
-        
-        // 2. Nettoyage des anciens IDs dans SwiftData pour éviter les doublons
-        do {
+                do {
             try context.delete(model: ArtworkIds.self)
             try context.save()
         } catch {
             print("Erreur lors du nettoyage des IDs : \(error)")
         }
         
-        // 3. Récupération de nouveaux IDs (50 comme défini dans APIService)
         await APIService.fetchAndStore50IDs(context: self.context)
         
         // 4. Préparation de la liste d'IDs pour cette session
@@ -96,8 +96,8 @@ class Game : GameInterface {
     func gameCycle(){
     }
     
-    func gameCycle() {}
-    
+//    func gameCycle() {}
+//    
     struct UserChoice {
         var name: String
         var artist: String

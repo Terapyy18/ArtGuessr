@@ -25,7 +25,7 @@ struct ArtWork: Identifiable, Decodable, Sendable {
         self.image = URL(string: imageString) ?? URL(string: "https://via.placeholder.com/150")!
         
         self.name = try container.decode(String.self, forKey: .name)
-        self.year = try container.decode(Date.self, forKey: .year)
+        self.year = try container.decode(Int.self, forKey: .year)
         self.artist = try container.decode(String.self, forKey: .artist)
     }
 }
