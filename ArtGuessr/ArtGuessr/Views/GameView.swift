@@ -1,7 +1,7 @@
 import SwiftUI
 import SwiftData
 
-// Enumération pour gérer les étapes du quiz
+// Énumération pour gérer les étapes du quiz
 enum GameStep {
     case artist, title, year
 }
@@ -22,7 +22,7 @@ struct GameView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                // Contenu Principal
+                // --- Contenu Principal ---
                 VStack(spacing: 25) {
                     if let game = gameInstance, let artwork = game.currentArtwork {
                         
@@ -54,7 +54,7 @@ struct GameView: View {
                         // 2. Question Dynamique
                         Text(questionText)
                             .font(.title2).bold()
-                            .id(currentStep)
+                            .id(currentStep) // Identifiant pour l'animation
                         
                         // 3. Options de réponse
                         VStack(spacing: 15) {
@@ -80,17 +80,15 @@ struct GameView: View {
                         }
                         .padding(.horizontal)
                         
+                        Spacer()
+                        
                     } else {
-                        VStack(spacing: 20) {
-                            ProgressView()
-                            Text("Préparation de la galerie...")
-                                .foregroundColor(.secondary)
-                        }
+                        // Affichage du Skeleton pendant le chargement initial
+                        GameSkeletonView()
                     }
-                    Spacer()
                 }
-                .blur(radius: showScorePopup ? 10 : 0) // Flou quand la popup est là
-                .disabled(showScorePopup) // Empêche de cliquer sur le jeu
+                .blur(radius: showScorePopup ? 10 : 0)
+                .disabled(showScorePopup)
                 
                 // --- Popup de Score ---
                 if showScorePopup {
@@ -132,12 +130,9 @@ struct GameView: View {
     
     private func buttonLabel(for option: ArtWork) -> String {
         switch currentStep {
-        case .artist:
-            return option.artist
-        case .title:
-            return option.name
-        case .year:
-            return "\(option.year)"
+        case .artist: return option.artist
+        case .title: return option.name
+        case .year: return "\(option.year)"
         }
     }
     
@@ -154,18 +149,17 @@ struct GameView: View {
             currentStep = .year
             
         case .year:
+            // Utilisation de la struct UserChoice (nom supposé selon votre logique)
             let finalChoice = userChoice(
                 name: selectedTitle,
                 artist: selectedArtist,
                 year: option.year
             )
             
-            // On récupère le score du tour renvoyé par le Game
             if let score = gameInstance?.getAwnsers(userAwnser: finalChoice) {
                 self.pointsGainedInRound = score
             }
             
-            // Affichage de la popup
             withAnimation(.spring()) {
                 showScorePopup = true
             }
@@ -178,23 +172,55 @@ struct GameView: View {
         selectedArtist = ""
         selectedTitle = ""
         
-        // Charger le tour suivant
         Task {
             try? await gameInstance?.loadNextRound()
         }
     }
     
     private func setupGame() {
-        func setupGame() {
-            // On vérifie si gameInstance est vide pour éviter de recréer le jeu à chaque apparition
-            if gameInstance == nil {
-                let newGame = Game(context: modelContext)
-                self.gameInstance = newGame
-                
-                // On lance le chargement de manière asynchrone
-                Task {
-                    await newGame.startGame()
+        if gameInstance == nil {
+            let newGame = Game(context: modelContext)
+            self.gameInstance = newGame
+            Task {
+                await newGame.startGame()
+            }
+        }
+    }
+}
+
+// MARK: - COMPOSANT SKELETON
+struct GameSkeletonView: View {
+    @State private var isPulsing = false
+    
+    var body: some View {
+        VStack(spacing: 25) {
+            Rectangle()
+                .fill(Color.gray.opacity(0.3))
+                .frame(height: 300)
+                .cornerRadius(12)
+                .padding(.top)
+            
+            Text("Qui a peint cette œuvre mystère ?")
+                .font(.title2).bold()
+            
+            VStack(spacing: 15) {
+                ForEach(0..<4, id: \.self) { _ in
+                    Text("Chargement en cours...")
+                        .font(.body)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.gray.opacity(0.3))
+                        .cornerRadius(12)
                 }
+            }
+            .padding(.horizontal)
+            Spacer()
+        }
+        .redacted(reason: .placeholder)
+        .opacity(isPulsing ? 0.5 : 1.0)
+        .onAppear {
+            withAnimation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true)) {
+                isPulsing = true
             }
         }
     }
