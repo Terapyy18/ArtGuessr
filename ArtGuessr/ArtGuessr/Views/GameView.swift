@@ -1,7 +1,7 @@
 import SwiftUI
 import SwiftData
 
-// Énumération pour gérer les étapes du quiz par œuvre
+// Énumération pour gérer les étapes du quiz
 enum GameStep {
     case artist, title, year
 }
@@ -15,6 +15,9 @@ struct GameView: View {
     @State private var selectedArtist: String = ""
     @State private var selectedTitle: String = ""
     @State private var selectedYear: Int = 0
+    
+    // --- État de verrouillage (Réactif au chargement) ---
+    @State private var isImageLoaded: Bool = false
     
     // --- États pour la Popup ---
     @State private var showScorePopup = false
@@ -37,11 +40,14 @@ struct GameView: View {
                     } else if let artwork = game.currentArtwork {
                         // --- 2. ÉCRAN DE JEU ---
                         VStack(spacing: 25) {
-                            // Zone Image
+                            // Zone Image avec détection de phase
                             AsyncImage(url: artwork.image) { phase in
                                 switch phase {
                                 case .empty:
-                                    ProgressView().frame(height: 300)
+                                    ProgressView()
+                                        .frame(height: 300)
+                                        .onAppear { isImageLoaded = false }
+                                    
                                 case .success(let image):
                                     image
                                         .resizable()
@@ -49,69 +55,81 @@ struct GameView: View {
                                         .frame(height: 300)
                                         .cornerRadius(12)
                                         .shadow(radius: 5)
+                                        .onAppear {
+                                            // Sécurité : Déclenche l'activation
+                                            withAnimation { isImageLoaded = true }
+                                        }
+                                    
                                 case .failure:
                                     VStack {
                                         Image(systemName: "photo.fill").font(.largeTitle)
                                         Text("Image indisponible")
                                     }
                                     .frame(height: 300)
+                                    .onAppear { isImageLoaded = true }
+                                    
                                 @unknown default:
                                     EmptyView()
                                 }
                             }
                             .padding(.top)
+                            // Force le passage à true si l'image est déjà en cache
+                            .task(id: artwork.image) {
+                                // On attend un cycle pour laisser AsyncImage tenter le chargement
+                                try? await Task.sleep(nanoseconds: 100_000_000)
+                                if !isImageLoaded { isImageLoaded = true }
+                            }
                             
-                            // Question Dynamique
-                            Text(questionText)
-                                .font(.title3).bold()
-                                .multilineTextAlignment(.center)
-                                .padding(.horizontal)
-                                .id(currentStep)
-                            
-                            // Options de réponse
-                            VStack(spacing: 12) {
-                                ForEach(game.currentOptions, id: \.id) { option in
-                                    Button(action: {
-                                        handleUserSelection(for: option)
-                                    }) {
-                                        Text(buttonLabel(for: option))
-                                            .font(.callout)
-                                            .foregroundColor(.primary)
-                                            .frame(maxWidth: .infinity)
-                                            .padding()
-                                            .background(Color.indigo.opacity(0.1))
-                                            .cornerRadius(12)
-                                            .overlay(
-                                                RoundedRectangle(cornerRadius: 12)
-                                                    .stroke(Color.indigo.opacity(0.3), lineWidth: 1)
-                                            )
+                            // Groupe des contrôles (Désactivé tant que isImageLoaded est false)
+                            VStack(spacing: 25) {
+                                Text(questionText)
+                                    .font(.title3).bold()
+                                    .multilineTextAlignment(.center)
+                                    .padding(.horizontal)
+                                    .id(currentStep)
+                                
+                                VStack(spacing: 12) {
+                                    ForEach(game.currentOptions, id: \.id) { option in
+                                        Button(action: {
+                                            handleUserSelection(for: option)
+                                        }) {
+                                            Text(buttonLabel(for: option))
+                                                .font(.callout)
+                                                .foregroundColor(isImageLoaded ? .primary : .secondary)
+                                                .frame(maxWidth: .infinity)
+                                                .padding()
+                                                .background(isImageLoaded ? Color.indigo.opacity(0.1) : Color.gray.opacity(0.1))
+                                                .cornerRadius(12)
+                                                .overlay(
+                                                    RoundedRectangle(cornerRadius: 12)
+                                                        .stroke(isImageLoaded ? Color.indigo.opacity(0.3) : Color.clear, lineWidth: 1)
+                                                )
+                                        }
                                     }
                                 }
+                                .padding(.horizontal)
                             }
-                            .padding(.horizontal)
+                            .disabled(!isImageLoaded)
+                            .opacity(isImageLoaded ? 1.0 : 0.5)
                             
                             Spacer()
                             
-                            // Indicateur de progression
                             Text("Manche \(game.currentRound) / \(Game.nbRounds)")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                                .padding(.bottom)
+                                .font(.caption).foregroundColor(.secondary).padding(.bottom)
                         }
                         .blur(radius: showScorePopup ? 10 : 0)
                         .disabled(showScorePopup)
                         .transition(.opacity)
                         
                     } else {
-                        // --- 3. CHARGEMENT / SKELETON ---
+                        // --- 3. CHARGEMENT INITIAL (SKELETON) ---
                         GameSkeletonView()
                     }
                 }
                 
                 // --- 4. POPUP DE FIN DE ROUND ---
                 if showScorePopup, let artwork = gameInstance?.currentArtwork {
-                    Color.black.opacity(0.3)
-                        .ignoresSafeArea()
+                    Color.black.opacity(0.3).ignoresSafeArea()
                     
                     ScoreView(
                         score: pointsGainedInRound,
@@ -123,7 +141,7 @@ struct GameView: View {
                     ) {
                         dismissPopup()
                     }
-                    .transition(.scale.combined(with: .opacity).animation(.spring(response: 0.3, dampingFraction: 0.7)))
+                    .transition(.scale.combined(with: .opacity))
                 }
             }
             .navigationTitle("Art Guesser")
@@ -161,7 +179,7 @@ struct GameView: View {
     }
     
     private func handleUserSelection(for option: ArtWork) {
-        withAnimation(.easeInOut) {
+        withAnimation {
             switch currentStep {
             case .artist:
                 selectedArtist = option.artist
@@ -171,12 +189,7 @@ struct GameView: View {
                 currentStep = .year
             case .year:
                 selectedYear = option.year
-                let finalChoice = userChoice(
-                    name: selectedTitle,
-                    artist: selectedArtist,
-                    year: selectedYear
-                )
-                
+                let finalChoice = userChoice(name: selectedTitle, artist: selectedArtist, year: selectedYear)
                 if let score = gameInstance?.getAwnsers(userAwnser: finalChoice) {
                     self.pointsGainedInRound = score
                 }
@@ -188,6 +201,8 @@ struct GameView: View {
     private func dismissPopup() {
         withAnimation {
             showScorePopup = false
+            // On remet isImageLoaded à false AVANT de charger le prochain round
+            isImageLoaded = false
             resetRoundState()
         }
     }
@@ -197,7 +212,6 @@ struct GameView: View {
         selectedArtist = ""
         selectedTitle = ""
         selectedYear = 0
-        
         Task {
             try? await gameInstance?.loadNextRound()
         }
@@ -207,9 +221,7 @@ struct GameView: View {
         if gameInstance == nil {
             let newGame = Game(context: modelContext)
             self.gameInstance = newGame
-            Task {
-                await newGame.startGame()
-            }
+            Task { await newGame.startGame() }
         }
     }
     
@@ -217,12 +229,8 @@ struct GameView: View {
         let newScoreRecord = GameScore(score: finalScore, maxScore: 10, date: .now)
         modelContext.insert(newScoreRecord)
         
-        // Reset local UI state
+        isImageLoaded = false
         currentStep = .artist
-        selectedArtist = ""
-        selectedTitle = ""
-        selectedYear = 0
-        
         gameInstance = nil
         setupGame()
     }
@@ -231,34 +239,20 @@ struct GameView: View {
 // MARK: - GameSkeletonView
 struct GameSkeletonView: View {
     @State private var isPulsing = false
-    
     var body: some View {
         VStack(spacing: 25) {
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Color.gray.opacity(0.2))
-                .frame(height: 300)
-                .padding(.top)
-            
-            RoundedRectangle(cornerRadius: 8)
-                .fill(Color.gray.opacity(0.2))
-                .frame(width: 250, height: 30)
-            
+            RoundedRectangle(cornerRadius: 12).fill(Color.gray.opacity(0.2)).frame(height: 300).padding(.top)
+            RoundedRectangle(cornerRadius: 8).fill(Color.gray.opacity(0.2)).frame(width: 250, height: 30)
             VStack(spacing: 15) {
                 ForEach(0..<3, id: \.self) { _ in
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color.gray.opacity(0.2))
-                        .frame(height: 55)
+                    RoundedRectangle(cornerRadius: 12).fill(Color.gray.opacity(0.2)).frame(height: 55)
                 }
-            }
-            .padding(.horizontal)
+            }.padding(.horizontal)
             Spacer()
         }
-        .padding()
         .opacity(isPulsing ? 0.6 : 1.0)
         .onAppear {
-            withAnimation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true)) {
-                isPulsing = true
-            }
+            withAnimation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true)) { isPulsing = true }
         }
     }
 }

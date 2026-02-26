@@ -74,20 +74,37 @@ struct APIService {
                         guard let httpResponse = response as? HTTPURLResponse,
                               httpResponse.statusCode == 200 else { return nil }
                         
-                        // 1. Décodage initial
                         let decoded = try JSONDecoder().decode(ArtWork.self, from: data)
                         
-                        // 2. Vérification stricte (Image, Titre, Artiste, Année non vides)
-                        // On vérifie que les chaînes ne sont pas juste des espaces ou vides
+                        // --- NOUVELLE LOGIQUE DE VÉRIFICATION ---
+                        
+                        // 1. Vérification syntaxique de l'URL d'image
+                        let imageUrl = decoded.image
+                        let hasValidUrlFormat = imageUrl.scheme != nil && imageUrl.host != nil
+                        
+                        // 2. Vérification de l'accessibilité réelle (HTTP HEAD)
+                        var imageIsAccessible = false
+                        if hasValidUrlFormat {
+                            var request = URLRequest(url: imageUrl)
+                            request.httpMethod = "HEAD" // On ne demande que les headers
+                            request.timeoutInterval = 3.0 // Timeout court pour ne pas bloquer le groupe
+                            
+                            if let (_, imageResponse) = try? await URLSession.shared.data(for: request),
+                               let httpImageResponse = imageResponse as? HTTPURLResponse {
+                                imageIsAccessible = httpImageResponse.statusCode == 200
+                            }
+                        }
+                        
+                        // 3. Autres critères
                         let hasTitle = !decoded.name.trimmingCharacters(in: .whitespaces).isEmpty
                         let hasArtist = !decoded.artist.trimmingCharacters(in: .whitespaces).isEmpty
-                        let hasImage = !decoded.image.absoluteString.isEmpty
-                        let hasYear = decoded.year != 0 // Ou une autre logique selon l'API
+                        let hasYear = decoded.year != 0
                         
-                        if hasTitle && hasArtist && hasImage && hasYear {
+                        // --- VALIDATION FINALE ---
+                        if hasTitle && hasArtist && imageIsAccessible && hasYear {
                             return decoded
                         } else {
-                            print("Données incomplètes pour l'ID \(id)")
+                            print("Données incomplètes ou image inaccessible pour l'ID \(id)")
                             return nil
                         }
                         
@@ -98,7 +115,6 @@ struct APIService {
                 }
             }
             
-            // Accumulation des résultats valides uniquement
             var validArtworks: [ArtWork] = []
             for await artwork in group {
                 if let artwork = artwork {
