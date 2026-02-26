@@ -1,23 +1,28 @@
 import SwiftUI
 
 struct MainTabView: View {
+    @State private var selectedTab = 0
 
     var body: some View {
-        TabView {
+        TabView(selection: $selectedTab) {
+            
+            HomeView(selectedTab: $selectedTab)
+                .tabItem {
+                    Label("Accueil", systemImage: "house.fill")
+                }
+                .tag(0)
+            
             GameView()
                 .tabItem {
-                    Label("Game", systemImage: "books.vertical.fill")
+                    Label("Jeu", systemImage: "play.fill")
                 }
+                .tag(1)
             
             ScoreboardView()
                 .tabItem {
-                    Label("Home", systemImage: "house")
-
+                    Label("Scores", systemImage: "trophy.fill")
                 }
-            HomeView()
-                .tabItem {
-                    Label("Scoreboard", systemImage: "info.circle")
-                }
+                .tag(2)
         }
         .accentColor(.indigo)
     }
