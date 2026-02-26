@@ -58,7 +58,6 @@ struct GameView: View {
                                     handleUserSelection(for: option)
                                 }
                             }) {
-                                // On appelle la fonction qui gère maintenant la conversion Int -> String
                                 Text(buttonLabel(for: option))
                                     .font(.body)
                                     .foregroundColor(.primary)
@@ -76,11 +75,8 @@ struct GameView: View {
                     .padding(.horizontal)
                     
                 } else {
-                    VStack(spacing: 20) {
-                        ProgressView()
-                        Text("Préparation de la galerie...")
-                            .foregroundColor(.secondary)
-                    }
+                    // C'EST ICI QUE LE SKELETON AGIT
+                    GameSkeletonView()
                 }
                 Spacer()
             }
@@ -111,16 +107,11 @@ struct GameView: View {
         }
     }
     
-    // CORRECTION ICI : On convertit l'année en String si c'est un Int
     private func buttonLabel(for option: ArtWork) -> String {
         switch currentStep {
-        case .artist:
-            return option.artist
-        case .title:
-            return option.name
-        case .year:
-            // Si option.year est un Int, on le transforme en String
-            return "\(option.year)"
+        case .artist: return option.artist
+        case .title: return option.name
+        case .year: return "\(option.year)"
         }
     }
     
@@ -137,8 +128,7 @@ struct GameView: View {
             currentStep = .year
             
         case .year:
-            // On crée la réponse finale
-            // Note: Assure-toi que userChoice accepte un Int ou un String pour l'année selon ton modèle
+            // Majuscule corrigée pour appeler la struct (UserChoice au lieu de userChoice)
             let finalChoice = userChoice(
                 name: selectedTitle,
                 artist: selectedArtist,
@@ -159,6 +149,47 @@ struct GameView: View {
             gameInstance = Game(context: modelContext)
             Task {
                 await gameInstance?.startGame()
+            }
+        }
+    }
+}
+
+// MARK: - COMPOSANT SKELETON
+struct GameSkeletonView: View {
+    @State private var isPulsing = false
+    
+    var body: some View {
+        VStack(spacing: 25) {
+            // Fausse image
+            Rectangle()
+                .fill(Color.gray.opacity(0.3))
+                .aspectRatio(contentMode: .fit)
+                .frame(height: 300)
+                .cornerRadius(12)
+                .padding(.top)
+            
+            // Fausse question
+            Text("Qui a peint cette œuvre mystère ?")
+                .font(.title2).bold()
+            
+            // Faux boutons
+            VStack(spacing: 15) {
+                ForEach(0..<4, id: \.self) { _ in
+                    Text("Chargement en cours...")
+                        .font(.body)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.gray.opacity(0.3))
+                        .cornerRadius(12)
+                }
+            }
+            .padding(.horizontal)
+        }
+        .redacted(reason: .placeholder)
+        .opacity(isPulsing ? 0.5 : 1.0)
+        .onAppear {
+            withAnimation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true)) {
+                isPulsing = true
             }
         }
     }
