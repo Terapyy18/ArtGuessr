@@ -3,6 +3,7 @@ import SwiftData
 import Observation
 
 @Observable
+@MainActor
 class Game : GameInterface {
     func checkAnswers(title: String, artist: String, year: Int) -> Int {
         return 0
@@ -28,25 +29,31 @@ class Game : GameInterface {
         self.context = context
     }
     
-    func getAwnsers(userAwnser : userChoice){
+    func getAwnsers(userAwnser : userChoice) -> Int? {
         print("Bien appelée !")
         if let artwork : ArtWork = currentArtwork {
-            var nameAwnser = userAwnser.name
-            var artistAwnser = userAwnser.artist
-            var yearAwnsser = userAwnser.year
+            let nameAwnser = userAwnser.name
+            let artistAwnser = userAwnser.artist
+            let yearAwnsser = userAwnser.year
+            
+            var tempScore = 0
             
             if nameAwnser == artwork.name {
-                currentScore += 1
+                tempScore += 1
             }
             
             if artistAwnser == artwork.artist {
-                currentScore += 1
+                tempScore += 1
             }
             
             if yearAwnsser == artwork.year {
-                currentScore += 1
+                tempScore += 1
             }
+            
+            currentScore += tempScore
+            return tempScore
         }
+        return nil
     }
     
     func startGame() async {
