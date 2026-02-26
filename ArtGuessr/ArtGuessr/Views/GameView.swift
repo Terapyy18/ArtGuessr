@@ -14,7 +14,7 @@ struct GameView: View {
     @State private var currentStep: GameStep = .artist
     @State private var selectedArtist: String = ""
     @State private var selectedTitle: String = ""
-    @State private var selectedYear: Int = 0 // Ajouté pour l'envoyer à la ScoreView
+    @State private var selectedYear: Int = 0
     
     // --- États pour la Popup ---
     @State private var showScorePopup = false
@@ -27,10 +27,7 @@ struct GameView: View {
                     if game.isGameOver {
                         // --- 1. ÉCRAN DE FIN DE PARTIE ---
                         GameOverView(score: game.currentScore) {
-                            Task {
-                                await game.startGame()
-                                resetUIState()
-                            }
+                            saveScoreAndRestart(finalScore: game.currentScore)
                         }
                         .transition(.asymmetric(
                             insertion: .move(edge: .trailing),
@@ -69,7 +66,7 @@ struct GameView: View {
                                 .font(.title3).bold()
                                 .multilineTextAlignment(.center)
                                 .padding(.horizontal)
-                                .id(currentStep) // Force l'animation au changement d'étape
+                                .id(currentStep)
                             
                             // Options de réponse
                             VStack(spacing: 12) {
@@ -111,9 +108,7 @@ struct GameView: View {
                     }
                 }
                 
-                // ==========================================
-                // 3. POPUP DE FIN DE ROUND
-                // ==========================================
+                // --- 4. POPUP DE FIN DE ROUND ---
                 if showScorePopup, let artwork = gameInstance?.currentArtwork {
                     Color.black.opacity(0.3)
                         .ignoresSafeArea()
@@ -156,7 +151,7 @@ struct GameView: View {
         case .year: return "En quelle année a-t-elle été créée ?"
         }
     }
-    
+
     private func buttonLabel(for option: ArtWork) -> String {
         switch currentStep {
         case .artist: return option.artist
@@ -175,10 +170,11 @@ struct GameView: View {
                 selectedTitle = option.name
                 currentStep = .year
             case .year:
+                selectedYear = option.year
                 let finalChoice = userChoice(
                     name: selectedTitle,
                     artist: selectedArtist,
-                    year: option.year
+                    year: selectedYear
                 )
                 
                 if let score = gameInstance?.getAwnsers(userAwnser: finalChoice) {
@@ -193,9 +189,6 @@ struct GameView: View {
         withAnimation {
             showScorePopup = false
             resetRoundState()
-        }
-        Task {
-            await gameInstance?.loadNextRound()
         }
     }
     
@@ -220,10 +213,15 @@ struct GameView: View {
         }
     }
     
-    // MARK: - Sauvegarde
     private func saveScoreAndRestart(finalScore: Int) {
         let newScoreRecord = GameScore(score: finalScore, maxScore: 10, date: .now)
         modelContext.insert(newScoreRecord)
+        
+        // Reset local UI state
+        currentStep = .artist
+        selectedArtist = ""
+        selectedTitle = ""
+        selectedYear = 0
         
         gameInstance = nil
         setupGame()
