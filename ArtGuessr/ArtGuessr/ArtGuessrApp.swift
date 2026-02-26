@@ -11,6 +11,12 @@ struct ArtGuessrApp: App {
     }
 }
 
-#Preview{
+#Preview {
+    // Création d'un container de test en mémoire
+    let config = ModelConfiguration(isStoredInMemoryOnly: true)
+    let container = try! ModelContainer(for: ArtworkIds.self, configurations: config)
+    
     MainTabView()
+        .modelContainer(container)
+    
 }
