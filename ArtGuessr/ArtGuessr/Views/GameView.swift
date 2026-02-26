@@ -1,7 +1,7 @@
 import SwiftUI
 import SwiftData
 
-// Énumération pour gérer les étapes du quiz
+// Énumération pour gérer les étapes du quiz par œuvre
 enum GameStep {
     case artist, title, year
 }
@@ -23,62 +23,28 @@ struct GameView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                // --- Contenu Principal ---
-                VStack(spacing: 25) {
-                    if let game = gameInstance {
-                        
-                        // ==========================================
-                        // 1. LE RÉSUMÉ DE PARTIE (GAME OVER)
-                        // ==========================================
-                        if game.isGameOver {
-                            VStack(spacing: 30) {
-                                Image(systemName: "trophy.circle.fill")
-                                    .font(.system(size: 80))
-                                    .foregroundColor(.yellow)
-                                    .padding(.top, 40)
-                                
-                                Text("Partie Terminée !")
-                                    .font(.largeTitle).bold()
-                                
-                                VStack(spacing: 10) {
-                                    Text("Ton score final")
-                                        .font(.headline)
-                                        .foregroundColor(.secondary)
-                                    
-                                    Text("\(game.currentScore) / 10")
-                                        .font(.system(size: 60, weight: .black, design: .rounded))
-                                        .foregroundColor(game.currentScore >= 5 ? .green : .orange)
-                                }
-                                
-                                Spacer()
-                                
-                                Button(action: {
-                                    saveScoreAndRestart(finalScore: game.currentScore)
-                                }) {
-                                    Text("Sauvegarder et Rejouer")
-                                        .font(.headline)
-                                        .foregroundColor(.white)
-                                        .frame(maxWidth: .infinity)
-                                        .padding()
-                                        .background(Color.indigo)
-                                        .cornerRadius(16)
-                                        .shadow(radius: 5)
-                                }
-                                .padding(.horizontal, 30)
-                                .padding(.bottom, 20)
+                if let game = gameInstance {
+                    if game.isGameOver {
+                        // --- 1. ÉCRAN DE FIN DE PARTIE ---
+                        GameOverView(score: game.currentScore) {
+                            Task {
+                                await game.startGame()
+                                resetUIState()
                             }
-                            
-                        // ==========================================
-                        // 2. LE JEU EN COURS
-                        // ==========================================
-                        } else if let artwork = game.currentArtwork {
-                            
+                        }
+                        .transition(.asymmetric(
+                            insertion: .move(edge: .trailing),
+                            removal: .move(edge: .leading)
+                        ))
+                        
+                    } else if let artwork = game.currentArtwork {
+                        // --- 2. ÉCRAN DE JEU ---
+                        VStack(spacing: 25) {
                             // Zone Image
                             AsyncImage(url: artwork.image) { phase in
                                 switch phase {
                                 case .empty:
-                                    ProgressView()
-                                        .frame(height: 300)
+                                    ProgressView().frame(height: 300)
                                 case .success(let image):
                                     image
                                         .resizable()
@@ -88,8 +54,8 @@ struct GameView: View {
                                         .shadow(radius: 5)
                                 case .failure:
                                     VStack {
-                                        Image(systemName: "exclamationmark.triangle")
-                                        Text("Erreur de chargement")
+                                        Image(systemName: "photo.fill").font(.largeTitle)
+                                        Text("Image indisponible")
                                     }
                                     .frame(height: 300)
                                 @unknown default:
@@ -100,19 +66,19 @@ struct GameView: View {
                             
                             // Question Dynamique
                             Text(questionText)
-                                .font(.title2).bold()
-                                .id(currentStep)
+                                .font(.title3).bold()
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal)
+                                .id(currentStep) // Force l'animation au changement d'étape
                             
                             // Options de réponse
-                            VStack(spacing: 15) {
+                            VStack(spacing: 12) {
                                 ForEach(game.currentOptions, id: \.id) { option in
                                     Button(action: {
-                                        withAnimation(.spring()) {
-                                            handleUserSelection(for: option)
-                                        }
+                                        handleUserSelection(for: option)
                                     }) {
                                         Text(buttonLabel(for: option))
-                                            .font(.body)
+                                            .font(.callout)
                                             .foregroundColor(.primary)
                                             .frame(maxWidth: .infinity)
                                             .padding()
@@ -129,15 +95,21 @@ struct GameView: View {
                             
                             Spacer()
                             
-                        } else {
-                            GameSkeletonView()
+                            // Indicateur de progression
+                            Text("Manche \(game.currentRound) / \(Game.nbRounds)")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                                .padding(.bottom)
                         }
+                        .blur(radius: showScorePopup ? 10 : 0)
+                        .disabled(showScorePopup)
+                        .transition(.opacity)
+                        
                     } else {
+                        // --- 3. CHARGEMENT / SKELETON ---
                         GameSkeletonView()
                     }
                 }
-                .blur(radius: showScorePopup ? 10 : 0)
-                .disabled(showScorePopup)
                 
                 // ==========================================
                 // 3. POPUP DE FIN DE ROUND
@@ -156,35 +128,32 @@ struct GameView: View {
                     ) {
                         dismissPopup()
                     }
-                    .transition(.scale.combined(with: .opacity))
+                    .transition(.scale.combined(with: .opacity).animation(.spring(response: 0.3, dampingFraction: 0.7)))
                 }
             }
-            .navigationTitle(gameInstance?.isGameOver == true ? "Résumé" : "Art Guesser")
+            .navigationTitle("Art Guesser")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                if gameInstance?.isGameOver == false {
+                if let game = gameInstance, !game.isGameOver {
                     ToolbarItem(placement: .topBarTrailing) {
-                        HStack {
-                            Image(systemName: "trophy.fill")
-                                .foregroundColor(.yellow)
-                            Text("Score: \(gameInstance?.currentScore ?? 0)")
-                                .bold()
+                        HStack(spacing: 4) {
+                            Image(systemName: "star.fill").foregroundColor(.yellow)
+                            Text("\(game.currentScore)").bold()
                         }
                     }
                 }
             }
-            .onAppear {
-                setupGame()
-            }
+            .onAppear { setupGame() }
         }
     }
     
-    // MARK: - Logique d'affichage
+    // MARK: - Helper Methods
     
     private var questionText: String {
         switch currentStep {
-        case .artist: return "Qui a peint cette œuvre ?"
-        case .title: return "Quel est le nom du tableau ?"
-        case .year: return "En quelle année ?"
+        case .artist: return "Qui est l'artiste ?"
+        case .title: return "Quel est le titre de l'œuvre ?"
+        case .year: return "En quelle année a-t-elle été créée ?"
         }
     }
     
@@ -196,40 +165,41 @@ struct GameView: View {
         }
     }
     
-    // MARK: - Logique de jeu
-    
     private func handleUserSelection(for option: ArtWork) {
-        switch currentStep {
-        case .artist:
-            selectedArtist = option.artist
-            currentStep = .title
-            
-        case .title:
-            selectedTitle = option.name
-            currentStep = .year
-            
-        case .year:
-            selectedYear = option.year // On sauvegarde l'année pour la popup
-            
-            // On laisse ton implémentation userChoice stricte
-            let finalChoice = userChoice(
-                name: selectedTitle,
-                artist: selectedArtist,
-                year: selectedYear
-            )
-            
-            if let score = gameInstance?.getAwnsers(userAwnser: finalChoice) {
-                self.pointsGainedInRound = score
-            }
-            
-            withAnimation(.spring()) {
+        withAnimation(.easeInOut) {
+            switch currentStep {
+            case .artist:
+                selectedArtist = option.artist
+                currentStep = .title
+            case .title:
+                selectedTitle = option.name
+                currentStep = .year
+            case .year:
+                let finalChoice = userChoice(
+                    name: selectedTitle,
+                    artist: selectedArtist,
+                    year: option.year
+                )
+                
+                if let score = gameInstance?.getAwnsers(userAwnser: finalChoice) {
+                    self.pointsGainedInRound = score
+                }
                 showScorePopup = true
             }
         }
     }
     
     private func dismissPopup() {
-        showScorePopup = false
+        withAnimation {
+            showScorePopup = false
+            resetRoundState()
+        }
+        Task {
+            await gameInstance?.loadNextRound()
+        }
+    }
+    
+    private func resetRoundState() {
         currentStep = .artist
         selectedArtist = ""
         selectedTitle = ""
@@ -260,38 +230,35 @@ struct GameView: View {
     }
 }
 
-// MARK: - COMPOSANT SKELETON
+// MARK: - GameSkeletonView
 struct GameSkeletonView: View {
     @State private var isPulsing = false
     
     var body: some View {
         VStack(spacing: 25) {
-            Rectangle()
-                .fill(Color.gray.opacity(0.3))
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color.gray.opacity(0.2))
                 .frame(height: 300)
-                .cornerRadius(12)
                 .padding(.top)
             
-            Text("Qui a peint cette œuvre mystère ?")
-                .font(.title2).bold()
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color.gray.opacity(0.2))
+                .frame(width: 250, height: 30)
             
             VStack(spacing: 15) {
-                ForEach(0..<4, id: \.self) { _ in
-                    Text("Chargement en cours...")
-                        .font(.body)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.gray.opacity(0.3))
-                        .cornerRadius(12)
+                ForEach(0..<3, id: \.self) { _ in
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color.gray.opacity(0.2))
+                        .frame(height: 55)
                 }
             }
             .padding(.horizontal)
             Spacer()
         }
-        .redacted(reason: .placeholder)
-        .opacity(isPulsing ? 0.5 : 1.0)
+        .padding()
+        .opacity(isPulsing ? 0.6 : 1.0)
         .onAppear {
-            withAnimation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true)) {
+            withAnimation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true)) {
                 isPulsing = true
             }
         }
