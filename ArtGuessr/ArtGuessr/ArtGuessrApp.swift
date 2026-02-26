@@ -7,8 +7,7 @@ struct ArtGuessrApp: App {
         WindowGroup {
             MainTabView()
         }
-        .modelContainer(for: ArtworkIds.self)
-    }
+        .modelContainer(for: [ArtworkIds.self, GameScore.self])    }
 }
 
 #Preview {
