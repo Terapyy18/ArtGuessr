@@ -74,15 +74,11 @@ struct APIService {
                         guard let httpResponse = response as? HTTPURLResponse,
                               httpResponse.statusCode == 200 else { return nil }
                         
-                        // 1. Décodage initial
                         let decoded = try JSONDecoder().decode(ArtWork.self, from: data)
-                        
-                        // 2. Vérification stricte (Image, Titre, Artiste, Année non vides)
-                        // On vérifie que les chaînes ne sont pas juste des espaces ou vides
                         let hasTitle = !decoded.name.trimmingCharacters(in: .whitespaces).isEmpty
                         let hasArtist = !decoded.artist.trimmingCharacters(in: .whitespaces).isEmpty
                         let hasImage = !decoded.image.absoluteString.isEmpty
-                        let hasYear = decoded.year != 0 // Ou une autre logique selon l'API
+                        let hasYear = decoded.year != 0
                         
                         if hasTitle && hasArtist && hasImage && hasYear {
                             return decoded
@@ -98,7 +94,6 @@ struct APIService {
                 }
             }
             
-            // Accumulation des résultats valides uniquement
             var validArtworks: [ArtWork] = []
             for await artwork in group {
                 if let artwork = artwork {

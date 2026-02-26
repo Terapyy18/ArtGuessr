@@ -16,7 +16,7 @@ struct MainTabView: View {
                 .tabItem {
                     Label("Jouer", systemImage: "paintpalette.fill")
                 }
-            
+                .tag(1)
             ScoreboardView()
                 .tabItem {
                     Label("Scores", systemImage: "list.number")

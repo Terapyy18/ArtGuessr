@@ -13,7 +13,6 @@ struct HomeView: View {
                             .font(.system(size: 70))
                             .foregroundColor(.indigo)
                             .shadow(color: .indigo.opacity(0.3), radius: 10, y: 5)
-                        
                         Text("Art Guesser")
                             .font(.system(.largeTitle, design: .rounded))
                             .fontWeight(.black)
@@ -23,33 +22,6 @@ struct HomeView: View {
                             .foregroundColor(.secondary)
                     }
                     .padding(.top, 40)
-                    
-//                    Button(action: {
-//                        selectedTab = 1
-//                    }) {
-//                        HStack(spacing: 20) {
-//                            Image(systemName: "play.fill")
-//                                .font(.title)
-//                            
-//                            VStack(alignment: .leading) {
-//                                Text("la date de publication")
-//                                    .font(.headline)
-//                                Text("7 Rounds - 4 Choix")
-//                                    .font(.subheadline)
-//                                    .opacity(0.8)
-//                            }
-//                            Spacer()
-//                            Image(systemName: "chevron.right")
-//                        }
-//                        .padding()
-//                        .foregroundColor(.white)
-//                        .background(Color.indigo)
-//                        .cornerRadius(16)
-//                        .shadow(color: .indigo.opacity(0.4), radius: 8, y: 4)
-//                        
-//                    }
-//                    
-//                    .padding(.horizontal, 25)
                 }
                 Button(action: {
                     selectedTab = 1
@@ -76,7 +48,7 @@ struct HomeView: View {
                     
                 }
                 .padding(.horizontal, 25)
-
+                
             }
             
             .navigationTitle("Accueil")
