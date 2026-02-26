@@ -14,6 +14,7 @@ struct GameView: View {
     @State private var currentStep: GameStep = .artist
     @State private var selectedArtist: String = ""
     @State private var selectedTitle: String = ""
+    @State private var selectedYear: Int = 0 // Ajouté pour l'envoyer à la ScoreView
     
     // --- États pour la Popup ---
     @State private var showScorePopup = false
@@ -110,12 +111,21 @@ struct GameView: View {
                     }
                 }
                 
-                // --- Popup de Score (Overlay) ---
-                if showScorePopup {
-                    Color.black.opacity(0.4)
+                // ==========================================
+                // 3. POPUP DE FIN DE ROUND
+                // ==========================================
+                if showScorePopup, let artwork = gameInstance?.currentArtwork {
+                    Color.black.opacity(0.3)
                         .ignoresSafeArea()
                     
-                    ScoreView(score: pointsGainedInRound) {
+                    ScoreView(
+                        score: pointsGainedInRound,
+                        details: [
+                            (question: "Artiste", userAnswer: selectedArtist, isCorrect: selectedArtist == artwork.artist, correctAnswer: artwork.artist),
+                            (question: "Titre", userAnswer: selectedTitle, isCorrect: selectedTitle == artwork.name, correctAnswer: artwork.name),
+                            (question: "Année", userAnswer: String(selectedYear), isCorrect: selectedYear == artwork.year, correctAnswer: String(artwork.year))
+                        ]
+                    ) {
                         dismissPopup()
                     }
                     .transition(.scale.combined(with: .opacity).animation(.spring(response: 0.3, dampingFraction: 0.7)))
@@ -193,12 +203,11 @@ struct GameView: View {
         currentStep = .artist
         selectedArtist = ""
         selectedTitle = ""
-    }
-    
-    private func resetUIState() {
-        resetRoundState()
-        pointsGainedInRound = 0
-        showScorePopup = false
+        selectedYear = 0
+        
+        Task {
+            try? await gameInstance?.loadNextRound()
+        }
     }
     
     private func setupGame() {
@@ -209,6 +218,15 @@ struct GameView: View {
                 await newGame.startGame()
             }
         }
+    }
+    
+    // MARK: - Sauvegarde
+    private func saveScoreAndRestart(finalScore: Int) {
+        let newScoreRecord = GameScore(score: finalScore, maxScore: 10, date: .now)
+        modelContext.insert(newScoreRecord)
+        
+        gameInstance = nil
+        setupGame()
     }
 }
 
