@@ -41,7 +41,7 @@ struct ScoreboardView: View {
                             Spacer()
                             
                             // Affichage du score avec code couleur (vert si >= 50%, orange sinon)
-                            Text("\(game.score) / \(game.maxScore)")
+                            Text("\(game.score)")
                                 .font(.title2)
                                 .bold()
                                 .foregroundColor(game.score >= (game.maxScore / 2) ? .green : .orange)
