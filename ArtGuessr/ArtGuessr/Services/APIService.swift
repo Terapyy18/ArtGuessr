@@ -5,7 +5,7 @@ struct APIService {
     
     @MainActor
     static func fetchAndStore50IDs(context: ModelContext) async {
-        let urlString = "https://collectionapi.metmuseum.org/public/collection/v1/search?isHighlight=true&hasImages=true&q=painting"
+        let urlString = "https://collectionapi.metmuseum.org/public/collection/v1/search?isHighlight=true&hasImages=true&q=painting&hasArtist=true"
         
         guard let url = URL(string: urlString) else {
             print("URL invalide")

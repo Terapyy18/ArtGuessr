@@ -14,13 +14,12 @@ struct MainTabView: View {
             
             GameView()
                 .tabItem {
-                    Label("Jeu", systemImage: "play.fill")
+                    Label("Jouer", systemImage: "paintpalette.fill")
                 }
-                .tag(1)
             
             ScoreboardView()
                 .tabItem {
-                    Label("Scores", systemImage: "trophy.fill")
+                    Label("Scores", systemImage: "list.number")
                 }
                 .tag(2)
         }
